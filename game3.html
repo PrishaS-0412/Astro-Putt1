@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMA-TSP: Learn & Solve</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4d77ff;
+            --secondary: #9d4edd;
+            --success: #38b000;
+            --warning: #ffaf00;
+            --danger: #ff477e;
+            --dark: #001233;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --bg: #f0f4ff;
+            --card-bg: white;
+            --shadow: 0 15px 40px rgba(0,0,0,0.08);
+            --border: #dee2e6;
+            --water: #a0d8f1;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: #2d3436;
+            line-height: 1.7;
+            scroll-behavior: smooth;
+        }
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            text-align: center;
+            padding: 5rem 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        header::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" opacity="0.15"><circle cx="20" cy="20" r="3" fill="white"/><circle cx="80" cy="30" r="2" fill="white"/><circle cx="50" cy="70" r="3" fill="white"/><circle cx="30" cy="80" r="1.5" fill="white"/></svg>') repeat;
+            pointer-events: none;
+        }
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .subtitle {
+            font-size: 1.3rem;
+            opacity: 0.95;
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        nav {
+            background: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            padding: 1.2rem;
+            flex-wrap: wrap;
+            gap: 1.2rem;
+        }
+        .nav-btn {
+            padding: 0.7rem 1.4rem;
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+        .nav-btn:hover, .nav-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(77,119,255,0.3);
+            transform: translateY(-2px);
+        }
+        main {
+            max-width: 1200px;
+            margin: 3rem auto;
+            padding: 0 1.5rem;
+        }
+        section {
+            margin-bottom: 5rem;
+            scroll-margin-top: 100px;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.8s ease forwards;
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        h2 {
+            font-size: 2.2rem;
+            margin-bottom: 1.2rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+        }
+        h2 i {
+            font-size: 2rem;
+            color: var(--primary);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2.5rem;
+        }
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+            h1 { font-size: 2.5rem; }
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-weight: 600;
+            margin-bottom: 0.7rem;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        input[type="range"], input[type="number"], input[type="checkbox"] {
+            padding: 0.6rem;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-family: inherit;
+            background: #fff;
+            transition: border-color 0.3s;
+        }
+        input[type="range"]:focus, input[type="number"]:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+        input[type="range"] {
+            height: 45px;
+        }
+        .range-value {
+            text-align: center;
+            font-weight: 600;
+            color: var(--primary);
+            margin-top: 0.5rem;
+        }
+        button {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.7rem;
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #3a5ecc;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 18px rgba(77,119,255,0.3);
+        }
+        .btn-secondary {
+            background: var(--gray);
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #495057;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 18px rgba(108,117,125,0.3);
+        }
+        canvas {
+            border-radius: 15px;
+            box-shadow: 0 6px 25px rgba(0,0,0,0.1);
+            max-width: 100%;
+            height: auto;
+            background: #fafafa;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .stat {
+            text-align: center;
+            padding: 1.2rem;
+            background: #f8f9ff;
+            border-radius: 15px;
+            border: 1px solid var(--border);
+            transition: transform 0.3s;
+        }
+        .stat:hover {
+            transform: translateY(-3px);
+        }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .stat-label {
+            font-size: 1rem;
+            color: var(--gray);
+            margin-top: 0.5rem;
+        }
+        .progress {
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 2rem 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--success));
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+        .info-box {
+            background: #e8f4fd;
+            border-left: 5px solid var(--primary);
+            padding: 1.2rem;
+            border-radius: 0 10px 10px 0;
+            margin: 1.2rem 0;
+            font-size: 1rem;
+            box-shadow: 0 2px 10px rgba(77,119,255,0.1);
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 300px;
+            background: var(--dark);
+            color: white;
+            text-align: left;
+            border-radius: 10px;
+            padding: 1.2rem;
+            position: absolute;
+            z-index: 10;
+            bottom: 130%;
+            left: 50%;
+            margin-left: -150px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.95rem;
+            box-shadow: 0 6px 25px rgba(0,0,0,0.2);
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        .tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px;
+            border: 6px solid transparent;
+            border-top-color: var(--dark);
+        }
+        .slime-phase {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            padding: 1.2rem;
+            background: #f0f4ff;
+            border-radius: 15px;
+            margin: 1.2rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+        }
+        .slime-phase:hover {
+            transform: translateX(5px);
+        }
+        .phase-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.8rem;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(77,119,255,0.3);
+        }
+        .phase-content h4 {
+            margin-bottom: 0.7rem;
+            color: var(--primary);
+        }
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.2rem;
+            margin: 1.2rem 0;
+            justify-content: center;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            font-size: 1rem;
+            padding: 0.5rem 1rem;
+            background: #f8f9ff;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        footer {
+            text-align: center;
+            padding: 4rem 1rem;
+            background: var(--dark);
+            color: white;
+            margin-top: 5rem;
+        }
+        .tour-guide {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            z-index: 1000;
+            max-width: 320px;
+            display: none;
+        }
+        .tour-step {
+            margin-bottom: 1.2rem;
+        }
+        .tour-step h4 {
+            color: var(--primary);
+            margin-bottom: 0.7rem;
+        }
+        .close-tour {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+        }
+        .water-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <h1>SMA-TSP Explorer</h1>
+        <p class="subtitle">Now with realistic terrain: watch SMA navigate around lakes and oceans!</p>
+    </header>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <button class="nav-btn active" onclick="scrollToSection('intro')"><i class="fas fa-home"></i> Intro</button>
+            <button class="nav-btn" onclick="scrollToSection('tsp')"><i class="fas fa-map-marker-alt"></i> TSP</button>
+            <button class="nav-btn" onclick="scrollToSection('sma')"><i class="fas fa-leaf"></i> SMA</button>
+            <button class="nav-btn" onclick="scrollToSection('solver')"><i class="fas fa-cogs"></i> Solver</button>
+            <button class="nav-btn" onclick="startTour()"><i class="fas fa-map-signs"></i> Tour</button>
+        </div>
+    </nav>
+    <!-- Main Content -->
+    <main>
+        <!-- Intro Section -->
+        <section id="intro">
+            <div class="card">
+                <h2><i class="fas fa-star"></i> Welcome to SMA-TSP</h2>
+                <p>Explore how the <strong>Slime Mould Algorithm</strong> solves TSP — now with <strong>water bodies</strong> that force smarter, realistic routing!</p>
+               
+                <div class="info-box">
+                    Cities on land only. Paths must avoid water — just like real logistics!
+                </div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background:#4d77ff;"></div>
+                        <span>City</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background:#38b000;"></div>
+                        <span>Best Path</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background:#a0d8f1;"></div>
+                        <span>Water Body</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background:#ffaf00;"></div>
+                        <span>Slime Trail</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- TSP Section -->
+        <section id="tsp">
+            <div class="card">
+                <h2><i class="fas fa-route"></i> What is TSP?</h2>
+                <div class="grid">
+                    <div>
+                        <p>Visit <strong>N cities</strong> once and return — shortest path wins!</p>
+                        <br>
+                        <p>Now with <strong>obstacles</strong>: paths crossing water are <em>invalid or penalized</em>.</p>
+                        <br>
+                        <p>SMA adapts — finds land-only routes!</p>
+                    </div>
+                    <div>
+                        <canvas id="tspDemo" width="400" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- SMA Section -->
+        <section id="sma">
+            <div class="card">
+                <h2><i class="fas fa-microscope"></i> How Does SMA Work?</h2>
+                <p>Slime mould explores, reinforces good paths, and avoids bad ones — now including water!</p>
+                <div class="slime-phase">
+                    <div class="phase-icon">1</div>
+                    <div class="phase-content">
+                        <h4>Spread & Sense</h4>
+                        <p>Slime tests routes; water blocks or slows progress.</p>
+                    </div>
+                </div>
+                <div class="slime-phase">
+                    <div class="phase-icon">2</div>
+                    <div class="phase-content">
+                        <h4>Reinforce Land</h4>
+                        <p>Shorter, dry paths get stronger trails.</p>
+                    </div>
+                </div>
+                <div class="slime-phase">
+                    <div class="phase-icon">3</div>
+                    <div class="phase-content">
+                        <h4>Converge</h4>
+                        <p>All slime follows the best land route.</p>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <strong>Real-World Ready</strong>: Avoids oceans, lakes, and swamps automatically.
+                </div>
+            </div>
+        </section>
+        <!-- Solver Section -->
+        <section id="solver">
+            <div class="card">
+                <h2><i class="fas fa-play-circle"></i> Interactive SMA Solver</h2>
+               
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="numCities">
+                            Number of Cities
+                            <div class="tooltip"><i class="fas fa-question-circle"></i>
+                                <span class="tooltiptext">10–30 recommended for visuals.</span>
+                            </div>
+                        </label>
+                        <input type="range" id="numCities" min="8" max="35" value="15">
+                        <div class="range-value" id="cityCount">15</div>
+                    </div>
+                    <div class="control-group">
+                        <label for="population">
+                            Population Size
+                            <div class="tooltip"><i class="fas fa-question-circle"></i>
+                                <span class="tooltiptext">More agents = better exploration.</span>
+                            </div>
+                        </label>
+                        <input type="number" id="population" min="10" max="100" value="30">
+                    </div>
+                    <div class="control-group">
+                        <label for="maxIterations">
+                            Max Iterations
+                            <div class="tooltip"><i class="fas fa-question-circle"></i>
+                                <span class="tooltiptext">300–1000 for convergence.</span>
+                            </div>
+                        </label>
+                        <input type="number" id="maxIterations" min="100" max="2000" value="600">
+                    </div>
+                    <div class="control-group">
+                        <label for="z">
+                            Exploration (z)
+                            <div class="tooltip"><i class="fas fa-question-circle"></i>
+                                <span class="tooltiptext">0.03 default. Higher = more random.</span>
+                            </div>
+                        </label>
+                        <input type="number" id="z" min="0" max="1" step="0.01" value="0.03">
+                    </div>
+                </div>
+
+                <!-- Water Controls -->
+                <div class="controls" style="margin-top: 1rem; border-top: 1px solid #eee; padding-top: 1.5rem;">
+                    <div class="control-group">
+                        <label for="enableWater">
+                            <div class="water-toggle">
+                                <input type="checkbox" id="enableWater" checked>
+                                <span>Enable Water Bodies</span>
+                            </div>
+                            <div class="tooltip"><i class="fas fa-question-circle"></i>
+                                <span class="tooltiptext">When enabled, cities avoid water. Paths crossing water are penalized.</span>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="control-group">
+                        <label for="waterPenalty">
+                            Water Crossing Penalty
+                            <div class="tooltip"><i class="fas fa-question-circle"></i>
+                                <span class="tooltiptext">Extra cost for crossing water. Higher = stronger avoidance.</span>
+                            </div>
+                        </label>
+                        <input type="range" id="waterPenalty" min="100" max="1000" value="500">
+                        <div class="range-value" id="penaltyValue">500</div>
+                    </div>
+                    <div class="control-group">
+                        <label for="numLakes">
+                            Number of Lakes
+                            <div class="tooltip"><i class="fas fa-question-circle"></i>
+                                <span class="tooltiptext">Random water bodies added to the map.</span>
+                            </div>
+                        </label>
+                        <input type="range" id="numLakes" min="0" max="6" value="2">
+                        <div class="range-value" id="lakeCount">2</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1.2rem; margin: 2rem 0; flex-wrap: wrap;">
+                    <button id="startBtn" class="btn-primary"><i class="fas fa-play"></i> Start SMA</button>
+                    <button id="pauseBtn" class="btn-secondary" style="display:none;"><i class="fas fa-pause"></i> Pause</button>
+                    <button id="resetBtn" class="btn-secondary"><i class="fas fa-sync-alt"></i> Reset</button>
+                    <button id="stepBtn" class="btn-secondary" style="margin-left: auto;"><i class="fas fa-step-forward"></i> Step</button>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value" id="currentDist">--</div>
+                        <div class="stat-label">Current Best</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="bestDist">--</div>
+                        <div class="stat-label">Global Best</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="iteration">0</div>
+                        <div class="stat-label">Generation</div>
+                    </div>
+                </div>
+                <div style="margin-top: 3rem;">
+                    <canvas id="canvas" width="600" height="500"></canvas>
+                </div>
+                <div style="margin-top: 2rem;">
+                    <canvas id="chart" width="600" height="200"></canvas>
+                </div>
+                <div style="margin-top: 2rem; text-align: center; color: #666; font-size: 1rem;" id="status">
+                    Configure terrain and launch SMA to watch it adapt around water!
+                </div>
+            </div>
+        </section>
+    </main>
+    <!-- Guided Tour -->
+    <div class="tour-guide" id="tourGuide">
+        <button class="close-tour" onclick="closeTour()">×</button>
+        <div class="tour-step" id="tourStep1">
+            <h4>Step 1: TSP with Obstacles</h4>
+            <p>Water forces smarter routing.</p>
+        </div>
+        <div class="tour-step" id="tourStep2" style="display:none;">
+            <h4>Step 2: SMA Adapts</h4>
+            <p>Watch it avoid lakes in real time.</p>
+        </div>
+        <button onclick="nextTourStep()" style="width:100%; margin-top:1.2rem;" class="btn-primary">Next</button>
+    </div>
+    <footer>
+        <p>SMA-TSP with Terrain Awareness | Built for Real-World Routing</p>
+    </footer>
+    <script>
+        // Navigation & Tour (unchanged)
+        function scrollToSection(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`[onclick="scrollToSection('${id}')"]`).classList.add('active');
+        }
+        let tourStep = 0;
+        function startTour() {
+            document.getElementById('tourGuide').style.display = 'block';
+            tourStep = 1;
+            updateTour();
+        }
+        function nextTourStep() {
+            tourStep++;
+            updateTour();
+        }
+        function updateTour() {
+            for (let i = 1; i <= 2; i++) {
+                document.getElementById(`tourStep${i}`).style.display = i === tourStep ? 'block' : 'none';
+            }
+            if (tourStep === 1) scrollToSection('tsp');
+            if (tourStep === 2) scrollToSection('solver');
+            if (tourStep > 2) closeTour();
+        }
+        function closeTour() {
+            document.getElementById('tourGuide').style.display = 'none';
+        }
+
+        // TSP Demo with water
+        const tspCtx = document.getElementById('tspDemo').getContext('2d');
+        function drawTSPDemo() {
+            tspCtx.clearRect(0, 0, 400, 300);
+            // Water
+            tspCtx.fillStyle = '#a0d8f1';
+            tspCtx.beginPath();
+            tspCtx.ellipse(200, 150, 80, 50, 0, 0, Math.PI*2);
+            tspCtx.fill();
+            const cities = [
+                {x: 100, y: 100}, {x: 300, y: 80}, {x: 250, y: 220},
+                {x: 120, y: 220}, {x: 200, y: 60}
+            ];
+            cities.forEach(c => {
+                tspCtx.beginPath();
+                tspCtx.arc(c.x, c.y, 12, 0, Math.PI*2);
+                tspCtx.fillStyle = '#4d77ff';
+                tspCtx.fill();
+                tspCtx.strokeStyle = '#fff';
+                tspCtx.lineWidth = 3;
+                tspCtx.stroke();
+            });
+            tspCtx.strokeStyle = '#38b000';
+            tspCtx.lineWidth = 3;
+            tspCtx.beginPath();
+            tspCtx.moveTo(cities[0].x, cities[0].y);
+            [4,1,2,3].forEach(i => tspCtx.lineTo(cities[i].x, cities[i].y));
+            tspCtx.closePath();
+            tspCtx.stroke();
+        }
+        drawTSPDemo();
+
+        // Solver
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const numCitiesSlider = document.getElementById('numCities');
+        const cityCount = document.getElementById('cityCount');
+        const popInput = document.getElementById('population');
+        const iterInput = document.getElementById('maxIterations');
+        const zInput = document.getElementById('z');
+        const enableWater = document.getElementById('enableWater');
+        const waterPenaltyInput = document.getElementById('waterPenalty');
+        const penaltyValue = document.getElementById('penaltyValue');
+        const numLakesInput = document.getElementById('numLakes');
+        const lakeCount = document.getElementById('lakeCount');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const stepBtn = document.getElementById('stepBtn');
+        const progressBar = document.getElementById('progressBar');
+        const status = document.getElementById('status');
+        const currentEl = document.getElementById('currentDist');
+        const bestEl = document.getElementById('bestDist');
+        const iterEl = document.getElementById('iteration');
+        const chartCtx = document.getElementById('chart').getContext('2d');
+        let chart;
+
+        numCitiesSlider.addEventListener('input', () => cityCount.textContent = numCitiesSlider.value);
+        waterPenaltyInput.addEventListener('input', () => penaltyValue.textContent = waterPenaltyInput.value);
+        numLakesInput.addEventListener('input', () => lakeCount.textContent = numLakesInput.value);
+
+        let cities = [], lakes = [], population = [], bestTour = null, bestDist = Infinity;
+        let distances = [];
+        let running = false, paused = false, iter = 0, maxIter = 600;
+        let stepMode = false;
+        let history = [];
+
+        function isInWater(x, y) {
+            for (let lake of lakes) {
+                const dx = x - lake.x;
+                const dy = y - lake.y;
+                if (dx*dx / (lake.rx*lake.rx) + dy*dy / (lake.ry*lake.ry) <= 1) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function lineCrossesWater(x1, y1, x2, y2) {
+            if (!enableWater.checked) return 0;
+            const steps = 20;
+            let crosses = 0;
+            for (let i = 1; i <= steps; i++) {
+                const t = i / steps;
+                const px = x1 + t * (x2 - x1);
+                const py = y1 + t * (y2 - y1);
+                if (isInWater(px, py)) crosses++;
+            }
+            return crosses;
+        }
+
+        function computeDistances(cities) {
+            const n = cities.length;
+            const d = Array(n).fill().map(() => Array(n).fill(0));
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < n; j++) {
+                    if (i === j) continue;
+                    const base = Math.hypot(cities[i].x - cities[j].x, cities[i].y - cities[j].y);
+                    const crosses = lineCrossesWater(cities[i].x, cities[i].y, cities[j].x, cities[j].y);
+                    d[i][j] = base + crosses * parseFloat(waterPenaltyInput.value);
+                }
+            }
+            return d;
+        }
+
+        function tourDist(tour) {
+            let sum = 0;
+            for (let i = 0; i < tour.length; i++) {
+                sum += distances[tour[i]][tour[(i + 1) % tour.length]];
+            }
+            return sum;
+        }
+
+        function randomTour(n) {
+            const t = Array.from({length: n}, (_,i) => i);
+            for (let i = n-1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [t[i], t[j]] = [t[j], t[i]];
+            }
+            return t;
+        }
+
+        function generateLakes(count) {
+            lakes = [];
+            for (let i = 0; i < count; i++) {
+                lakes.push({
+                    x: 100 + Math.random() * (canvas.width - 200),
+                    y: 100 + Math.random() * (canvas.height - 200),
+                    rx: 40 + Math.random() * 60,
+                    ry: 30 + Math.random() * 50
+                });
+            }
+        }
+
+        function init() {
+            const n = parseInt(numCitiesSlider.value);
+            cities = [];
+            const numLakes = parseInt(numLakesInput.value);
+            generateLakes(numLakes);
+
+            // Place cities avoiding water
+            for (let i = 0; i < n; i++) {
+                let x, y, valid = false;
+                while (!valid) {
+                    x = 80 + Math.random() * (canvas.width - 160);
+                    y = 80 + Math.random() * (canvas.height - 160);
+                    valid = !isInWater(x, y);
+                }
+                cities.push({x, y});
+            }
+
+            distances = computeDistances(cities);
+            population = Array.from({length: parseInt(popInput.value)}, () => randomTour(n));
+            bestTour = null; bestDist = Infinity; iter = 0;
+            maxIter = parseInt(iterInput.value);
+            history = [];
+            progressBar.style.width = '0%';
+            pauseBtn.style.display = 'none';
+            paused = false;
+            chart.data.labels = [];
+            chart.data.datasets[0].data = [];
+            chart.update();
+            draw();
+            status.textContent = 'Ready! Start SMA to see it avoid water.';
+        }
+
+        function draw() {
+            ctx.fillStyle = '#fafafa';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw water bodies
+            ctx.fillStyle = '#a0d8f1';
+            ctx.globalAlpha = 0.7;
+            for (let lake of lakes) {
+                ctx.beginPath();
+                ctx.ellipse(lake.x, lake.y, lake.rx, lake.ry, 0, 0, Math.PI*2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1.0;
+
+            // Slime trails
+            for (let k = 0; k < Math.min(6, population.length); k++) {
+                let idx = Math.floor(Math.random() * population.length);
+                let tour = population[idx];
+                ctx.strokeStyle = '#ffaf0022';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(cities[tour[0]].x, cities[tour[0]].y);
+                tour.forEach((id, i) => {
+                    if (i > 0) ctx.lineTo(cities[id].x, cities[id].y);
+                });
+                ctx.closePath();
+                ctx.stroke();
+            }
+
+            // Cities
+            cities.forEach((c, i) => {
+                ctx.beginPath();
+                ctx.arc(c.x, c.y, 12, 0, Math.PI*2);
+                ctx.fillStyle = '#4d77ff';
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                ctx.fillStyle = '#fff';
+                ctx.font = '12px Inter';
+                ctx.textAlign = 'center';
+                ctx.fillText(i, c.x, c.y + 4);
+            });
+
+            // Best tour
+            if (bestTour) {
+                ctx.strokeStyle = '#38b000';
+                ctx.lineWidth = 5;
+                ctx.beginPath();
+                ctx.moveTo(cities[bestTour[0]].x, cities[bestTour[0]].y);
+                bestTour.forEach((id, i) => {
+                    if (i > 0) ctx.lineTo(cities[id].x, cities[id].y);
+                });
+                ctx.closePath();
+                ctx.stroke();
+                ctx.strokeStyle = '#ffaf0044';
+                ctx.lineWidth = 10;
+                ctx.stroke();
+            }
+        }
+
+        async function runStep() {
+            if (iter >= maxIter) return false;
+            const fitness = population.map(tourDist);
+            const bestIdx = fitness.indexOf(Math.min(...fitness));
+            const currBest = fitness[bestIdx];
+            if (currBest < bestDist) {
+                bestDist = currBest;
+                bestTour = [...population[bestIdx]];
+            }
+            iter++;
+            iterEl.textContent = iter;
+            currentEl.textContent = currBest.toFixed(1);
+            bestEl.textContent = bestDist.toFixed(1);
+            progressBar.style.width = `${(iter / maxIter) * 100}%`;
+            status.textContent = `Gen ${iter}: ${population.length} slimes avoiding water...`;
+            history.push(bestDist);
+            chart.data.labels.push(iter);
+            chart.data.datasets[0].data.push(bestDist);
+            chart.update();
+
+            const z = parseFloat(zInput.value);
+            const newPop = [];
+            for (let i = 0; i < population.length; i++) {
+                const X = population[i];
+                const Xb = population[bestIdx];
+                const r = Math.random();
+                let newX;
+                if (r < z) {
+                    newX = randomTour(cities.length);
+                } else {
+                    newX = [...Xb];
+                    if (Math.random() < 0.8) {
+                        const a = Math.floor(Math.random() * newX.length);
+                        const b = Math.floor(Math.random() * newX.length);
+                        [newX[a], newX[b]] = [newX[b], newX[a]];
+                    }
+                }
+                newPop.push(newX);
+            }
+            population = newPop;
+            draw();
+            return true;
+        }
+
+        async function runFull() {
+            if (running) return;
+            running = true;
+            startBtn.disabled = true;
+            stepBtn.disabled = true;
+            pauseBtn.style.display = 'inline-flex';
+            init();
+            while (iter < maxIter && running) {
+                if (paused) {
+                    await new Promise(resolve => {
+                        const check = setInterval(() => {
+                            if (!paused) { clearInterval(check); resolve(); }
+                        }, 100);
+                    });
+                }
+                await runStep();
+                if (!stepMode) await new Promise(r => setTimeout(r, 30));
+            }
+            status.textContent = `Done! Best land route: ${bestDist.toFixed(1)}`;
+            running = false;
+            startBtn.disabled = false;
+            stepBtn.disabled = false;
+            pauseBtn.style.display = 'none';
+        }
+
+        startBtn.onclick = () => { stepMode = false; runFull(); };
+        pauseBtn.onclick = () => {
+            paused = !paused;
+            pauseBtn.innerHTML = paused ? '<i class="fas fa-play"></i> Resume' : '<i class="fas fa-pause"></i> Pause';
+        };
+        stepBtn.onclick = async () => {
+            stepMode = true;
+            if (!running) init();
+            await runStep();
+        };
+        resetBtn.onclick = () => {
+            running = false; paused = false;
+            startBtn.disabled = false; stepBtn.disabled = false;
+            pauseBtn.style.display = 'none';
+            init();
+        };
+
+        chart = new Chart(chartCtx, {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: 'Best Distance', data: [], borderColor: '#38b000', backgroundColor: 'rgba(56,176,0,0.1)', fill: true, tension: 0.3 }] },
+            options: { responsive: true, scales: { y: { title: { display: true, text: 'Distance' } }, x: { title: { display: true, text: 'Iteration' } } }, plugins: { legend: { position: 'top' } } }
+        });
+
+        window.onload = () => {
+            init();
+            draw();
+        };
+    </script>
+</body>
+</html>
